@@ -1,0 +1,71 @@
+<!DOCTYPE aesl-source>
+<network>
+
+
+<!--list of global events-->
+
+
+<!--list of constants-->
+<constant value="400" name="MOTOR_SPEED"/>
+<constant value="300" name="PROXYMITIY_SENSOR_DETECTION_THRESHOLD"/>
+
+
+<!--show keywords state-->
+<keywords flag="true"/>
+
+
+<!--node thymio-II-->
+<node nodeId="16653" name="thymio-II">var i
+var left_sensors_triggerd = 0
+var righ_sensors_triggerd = 0
+
+sub move_forward
+	motor.left.target=MOTOR_SPEED
+	motor.right.target=MOTOR_SPEED
+		
+sub turn_left
+	motor.left.target=MOTOR_SPEED
+	motor.right.target=-MOTOR_SPEED
+	
+sub turn_right
+	motor.left.target=-MOTOR_SPEED
+	motor.right.target=MOTOR_SPEED
+	
+# Update global var in_front_of_somthing. If 1 then one sensor detected smg in the front else 0 means clear.
+sub update_front_sensors_status
+	left_sensors_triggerd = 0
+	righ_sensors_triggerd = 0
+	for i in 0:2 do
+		if prox.horizontal[i] > PROXYMITIY_SENSOR_DETECTION_THRESHOLD and left_sensors_triggerd == 0 then 
+			left_sensors_triggerd = 1
+		end
+	end
+	
+	for i in 2:4 do
+		if prox.horizontal[i] > PROXYMITIY_SENSOR_DETECTION_THRESHOLD and righ_sensors_triggerd == 0 then 
+			righ_sensors_triggerd = 1
+		end
+	end
+
+onevent buttons
+	if button.center==1 then 
+		motor.left.target=0 
+		motor.right.target=0 
+	end
+
+onevent prox
+	callsub update_front_sensors_status
+	if left_sensors_triggerd == 1 then
+		callsub turn_left
+		call leds.top(32, 0, 0)
+	elseif righ_sensors_triggerd == 1 then
+		callsub turn_right
+		call leds.top(0, 32, 0)
+	else
+		callsub move_forward
+		call leds.top(0, 0, 0)
+	end
+	</node>
+
+
+</network>
